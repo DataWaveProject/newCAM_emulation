@@ -7,24 +7,22 @@ from torch.utils.data import DataLoader
 import Model
 from loaddata import newnorm, data_loader
 
-
-
 from torch.cuda import is_available
 from torch.backends import mps
+
 if is_available():
     DEVICE = "cuda"
 elif mps.is_available():
-    DEVICE = "mps"
+    DEVICE = "mps"    
 else:
     DEVICE = "cpu"
 print(f"Using device: {DEVICE}")
-
 
 class EarlyStopper:
     def __init__(self, patience=1, min_delta=0):
         self.patience = patience
         self.min_delta = min_delta
-        self.counter = 0
+        self.counter = 0train.py
         self.min_validation_loss = np.inf
 
     def early_stop(self, validation_loss):
@@ -40,8 +38,6 @@ class EarlyStopper:
             if self.counter >= self.patience:
                 return True
         return False
-
-
 
 
 ## load mean and std for normalization
@@ -101,6 +97,7 @@ for iter in s_list:
     print('working on: ', filename)
 
     F = nc.Dataset(filename)
+
     PS = np.asarray(F['PS'][0,:])
     PS = newnorm(PS, PSm, PSs)
     
