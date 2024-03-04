@@ -9,7 +9,6 @@ from loaddata import newnorm, data_loader
 
 from torch.cuda import is_available
 from torch.backends import mps
-
 if is_available():
     DEVICE = "cuda"
 elif mps.is_available():
@@ -22,7 +21,7 @@ class EarlyStopper:
     def __init__(self, patience=1, min_delta=0):
         self.patience = patience
         self.min_delta = min_delta
-        self.counter = 0train.py
+        self.counter = 0
         self.min_validation_loss = np.inf
 
     def early_stop(self, validation_loss):
@@ -38,6 +37,8 @@ class EarlyStopper:
             if self.counter >= self.patience:
                 return True
         return False
+
+
 
 
 ## load mean and std for normalization
