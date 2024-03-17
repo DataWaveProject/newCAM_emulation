@@ -1,3 +1,6 @@
+#### These data, mean, std values are to be passed to Model.py, where the data is first normalised and 
+#### then passed to data_loader in loaddata.py and then it is passed to the model.
+
 import numpy as np
 
 ilev = 93
@@ -14,6 +17,7 @@ for iter in s_list:
     print('working on: ', filename)
     fm = np.load('Demodata/mean_demo_sub.npz')  # mean file
     fs = np.load('Demodata/std_demo_sub.npz')   # std deviation file
+
 
 
 
