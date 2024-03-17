@@ -59,3 +59,19 @@ where = ["."]  # list of folders that contain the packages (["."] by default)
 include = ["newCAM_emulation*"]  # package names should match these glob patterns (["*"] by default)
 exclude = ["Demodata/*"]  # exclude packages matching these glob patterns (empty by default)
 namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
+
+[tool.ruff]
+# Run linting and formatting on notebooks
+extend-include = ["*.ipynb"]
+
+[tool.ruff.lint]
+# Enable:  D: `pydocstyle`, PL: `pylint`, I: `isort`, W: `pycodestyle whitespace`
+#          NPY: `numpy`, 
+select = ["D", "PL", "I", "E", "W", "NPY"]
+
+# Enable D417 (Missing argument description) on top of the NumPy convention.
+extend-select = ["D417"]
+
+[tool.ruff.lint.pydocstyle]
+# Use NumPy convention for checking docstrings
+convention = "numpy"

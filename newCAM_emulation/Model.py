@@ -9,18 +9,24 @@ import torch.nn.utils.prune as prune
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 
+
 # Required for feeding the data iinto NN.
 class myDataset(Dataset):
     def __init__(self, X, Y):
-
+        """
+        Parameters:
+            X (tensor): Input data.
+            Y (tensor): Output data.
+        """
         self.features = torch.tensor(X, dtype=torch.float64)
         self.labels = torch.tensor(Y, dtype=torch.float64)
 
     def __len__(self):
+        """Function that is called when you call len(dataloader)"""
         return len(self.features.T)
 
     def __getitem__(self, idx):
-
+        """Function that is called when you call dataloader"""
         feature = self.features[:, idx]
         label = self.labels[:, idx]
 
@@ -28,79 +34,33 @@ class myDataset(Dataset):
 
 
 # The NN model.
+class NormalizationLayer(nn.Module):
+    def __init__(self, mean, std):
+        super(NormalizationLayer, self).__init__()
+        self.mean = mean
+        self.std = std
+
+    def forward(self, x):
+        return (x - self.mean) / self.std
+
 class FullyConnected(nn.Module):
-    def __init__(self):
+    def __init__(self, ilev, mean, std):
         super(FullyConnected, self).__init__()
-        ilev=93
+        self.normalization = NormalizationLayer(mean, std)
+        self.ilev = ilev
 
-        self.linear_stack = nn.Sequential(
-            nn.Linear(8*ilev+4, 500, dtype=torch.float64),
-            nn.SiLU(),
-            nn.Linear(500, 500, dtype=torch.float64),
-            nn.SiLU(),
-            nn.Linear(500, 500, dtype=torch.float64),
-            nn.SiLU(),
-            nn.Linear(500, 500, dtype=torch.float64),
-            nn.SiLU(),
-            nn.Linear(500, 500, dtype=torch.float64),
-            nn.SiLU(),
-            nn.Linear(500, 500, dtype=torch.float64),
-            nn.SiLU(),
-            nn.Linear(500, 500, dtype=torch.float64),
-            nn.SiLU(),
-            nn.Linear(500, 500, dtype=torch.float64),
-            nn.SiLU(),
-            nn.Linear(500, 500, dtype=torch.float64),
-            nn.SiLU(),
-            nn.Linear(500, 500, dtype=torch.float64),
-            nn.SiLU(),
-            nn.Linear(500, 500, dtype=torch.float64),
-            nn.SiLU(),
-            nn.Linear(500, 500, dtype=torch.float64),
-            nn.SiLU(),
-            nn.Linear(500, 2*ilev, dtype=torch.float64),
-        )
+        layers = []
+        layers.append(nn.Linear(8 * ilev + 4, 500))
+        layers.append(nn.SiLU())
+        
+        num_layers = 10  # Example: Change this to the desired number of hidden layers
+        for _ in range(num_layers):
+            layers.append(nn.Linear(500, 500))
+            layers.append(nn.SiLU())
 
-    def forward(self, X):
+        layers.append(nn.Linear(500, 2 * ilev))
+        self.linear_stack = nn.Sequential(*layers)
 
-        return self.linear_stack(X)
-
-
-# training loop
-def train_loop(dataloader, model, loss_fn, optimizer):
-    size = len(dataloader.dataset)
-    avg_loss = 0
-    for batch, (X, Y) in enumerate(dataloader):
-        # Compute prediction and loss
-        pred = model(X)
-        loss = loss_fn(pred, Y)
-
-        # Backpropagation
-        optimizer.zero_grad(set_to_none=True)
-        loss.backward()
-        optimizer.step()
-
-        with torch.no_grad():
-            avg_loss += loss.item()
-
-    avg_loss /= len(dataloader)
-
-    return avg_loss
-
-
-# validating loop
-def val_loop(dataloader, model, loss_fn):
-    avg_loss = 0
-    with torch.no_grad():
-        for batch, (X, Y) in enumerate(dataloader):
-            # Compute prediction and loss
-            pred = model(X)
-            loss = loss_fn(pred, Y)
-            avg_loss += loss.item()
-
-    avg_loss /= len(dataloader)
-
-    return avg_loss
-
-
-
+    def forward(self, x):
+        x = self.normalization(x)
+        return self.linear_stack(x)
