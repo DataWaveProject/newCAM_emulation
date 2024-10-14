@@ -8,6 +8,7 @@ import torch
 import torch.nn.functional as nnF
 import torchvision
 from loaddata import data_loader, newnorm
+from savedata import save_netcdf_file
 from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
@@ -24,6 +25,8 @@ print(device)
 Initialize Hyperparameters
 """
 ilev = 93
+ilev_94 = 94
+
 dim_NN = 8 * ilev + 4
 dim_NNout = 2 * ilev
 
@@ -33,8 +36,8 @@ num_epochs = 1
 
 
 ## load mean and std for normalization
-fm = np.load("Demodata/mean_demo.npz")
-fs = np.load("Demodata/std_demo.npz")
+fm = np.load("Demodata/mean_demo_sub.npz")
+fs = np.load("Demodata/std_demo_sub.npz")
 
 Um = fm["U"]
 Vm = fm["V"]
@@ -73,14 +76,16 @@ GWnet = Model.FullyConnected()
 optimizer = torch.optim.Adam(GWnet.parameters(), lr=learning_rate)
 
 
-s_list = list(range(5, 6))
+s_list = list(range(6, 7))
+
+data_vars = []
 
 for iter in s_list:
     if iter > 0:
         GWnet.load_state_dict(torch.load("./conv_torch.pth"))
         GWnet.eval()
     print("data loader iteration", iter)
-    filename = "./Demodata/Demo_timestep_" + str(iter).zfill(3) + ".nc"
+    filename = "Demodata/newCAM_demo_sub_" + str(iter).zfill(1) + ".nc"
 
     F = nc.Dataset(filename)
     PS = np.asarray(F["PS"][0, :])
@@ -116,10 +121,10 @@ for iter in s_list:
     NM = np.asarray(F["NMBV"][0, :, :])
     NM = newnorm(NM, NMm, NMs)
 
-    UTGWSPEC = np.asarray(F["BUTGWSPEC"][0, :, :])
+    UTGWSPEC = np.asarray(F["UTGWSPEC"][0, :, :])
     UTGWSPEC = newnorm(UTGWSPEC, UTGWSPECm, UTGWSPECs)
 
-    VTGWSPEC = np.asarray(F["BVTGWSPEC"][0, :, :])
+    VTGWSPEC = np.asarray(F["VTGWSPEC"][0, :, :])
     VTGWSPEC = newnorm(VTGWSPEC, VTGWSPECm, VTGWSPECs)
 
     print("shape of PS", np.shape(PS))
@@ -134,13 +139,32 @@ for iter in s_list:
     print("shape of UTGWSPEC", np.shape(UTGWSPEC))
     print("shape of VTGWSPEC", np.shape(VTGWSPEC))
 
+    output_filename = f"Demodata/normalized_data_{iter}.nc"
+    save_netcdf_file(
+        output_filename,
+        lat,
+        lon,
+        ilev,
+        ilev_94,
+        PS,
+        Z3,
+        U,
+        V,
+        T,
+        DSE,
+        RHOI,
+        NETDT,
+        NM,
+        UTGWSPEC,
+        VTGWSPEC,
+    )
+
     x_test, y_test = data_loader(
         U, V, T, DSE, NM, NETDT, Z3, RHOI, PS, lat, lon, UTGWSPEC, VTGWSPEC
     )
 
     print("shape of x_test", np.shape(x_test))
     print("shape of y_test", np.shape(y_test))
-
     data = Model.myDataset(X=x_test, Y=y_test)
     test_loader = DataLoader(data, batch_size=len(data), shuffle=False)
     print(test_loader)
@@ -155,4 +179,23 @@ for iter in s_list:
     print("shape of truth ", np.shape(truth))
     print("shape of prediction", np.shape(predict))
 
-    np.save("./pred_data_" + str(iter) + ".npy", predict)
+    # np.save("./pred_data_" + str(iter) + ".npy", predict)
+    output_filename = f"Demodata/predicted_data_{iter}.nc"
+    save_netcdf_file(
+        output_filename,
+        lat,
+        lon,
+        ilev,
+        ilev_94,
+        PS,
+        Z3,
+        U,
+        V,
+        T,
+        DSE,
+        RHOI,
+        NETDT,
+        NM,
+        UTGWSPEC,
+        VTGWSPEC,
+    )

@@ -4,6 +4,7 @@ import Model
 import netCDF4 as nc
 import numpy as np
 import torch
+import xarray as xr
 from loaddata import data_loader, newnorm
 from torch import nn
 from torch.backends import mps
@@ -55,8 +56,8 @@ class EarlyStopper:
 
 
 ## load mean and std for normalization
-fm = np.load("../Demodata/mean_demo_sub.npz")
-fs = np.load("../Demodata/std_demo_sub.npz")
+fm = np.load("Demodata/mean_demo_sub.npz")
+fs = np.load("Demodata/std_demo_sub.npz")
 
 Um = fm["U"]
 Vm = fm["V"]
@@ -88,6 +89,8 @@ VTGWSPECs = fs["VTGWSPEC"]
 
 ilev = 93
 
+ilev_94 = 94
+
 dim_NN = int(8 * ilev + 4)
 dim_NNout = int(2 * ilev)
 
@@ -103,11 +106,14 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)  # weight_dec
 
 s_list = list(range(1, 6))
 
+data_vars = []
+
 for iter in s_list:
     if iter > 1:
         model.load_state_dict(torch.load("conv_torch.pth"))
+
     print("data loader iteration", iter)
-    filename = "../Demodata/newCAM_demo_sub_" + str(iter).zfill(1) + ".nc"
+    filename = "Demodata/newCAM_demo_sub_" + str(iter).zfill(1) + ".nc"
     print("working on: ", filename)
 
     F = nc.Dataset(filename)
